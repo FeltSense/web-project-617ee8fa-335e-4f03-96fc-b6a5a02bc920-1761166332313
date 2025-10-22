@@ -4,9 +4,127 @@ import React, { useState } from 'react'
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    serviceType: '',
+    budget: '',
+    timeline: '',
+    projectDescription: '',
+    hearAboutUs: '',
+    newsletter: false
+  })
+  const [errors, setErrors] = useState({})
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }))
+    }
+  }
+
+  const validateStep = (step) => {
+    const newErrors = {}
+    
+    if (step === 1) {
+      if (!formData.name.trim()) newErrors.name = 'Name is required'
+      if (!formData.email.trim()) {
+        newErrors.email = 'Email is required'
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email'
+      }
+      if (!formData.phone.trim()) newErrors.phone = 'Phone is required'
+    }
+    
+    if (step === 2) {
+      if (!formData.serviceType) newErrors.serviceType = 'Please select a service type'
+      if (!formData.budget) newErrors.budget = 'Please select a budget range'
+      if (!formData.timeline) newErrors.timeline = 'Please select a timeline'
+    }
+    
+    if (step === 3) {
+      if (!formData.projectDescription.trim()) {
+        newErrors.projectDescription = 'Project description is required'
+      } else if (formData.projectDescription.trim().length < 20) {
+        newErrors.projectDescription = 'Please provide more details (at least 20 characters)'
+      }
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, 3))
+    }
+  }
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!validateStep(3)) return
+    
+    setIsSubmitting(true)
+    setSubmitStatus('idle')
+    
+    try {
+      const response = await fetch('https://deep-api-server-2moiw.kinsta.app/api/form-submissions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          company: formData.company || 'Catalyst Creative Studio',
+          formType: 'Multi-Step Contact Form',
+          submittedAt: new Date().toISOString()
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to submit form')
+      }
+
+      setSubmitStatus('success')
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        serviceType: '',
+        budget: '',
+        timeline: '',
+        projectDescription: '',
+        hearAboutUs: '',
+        newsletter: false
+      })
+      setCurrentStep(1)
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setSubmitStatus('error')
+      setErrorMessage('Unable to submit your form. Please try again or contact us directly at hello@catalystcreative.studio')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/60 via-black/40 to-transparent backdrop-blur-sm">
@@ -372,7 +490,7 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-gray-700 leading-relaxed">
-          "Catalyst Creative Studio transformed our brand identity completely. Their strategic approach to our rebranding campaign resulted in a 240% increase in brand awareness within just three months."
+          &quot;Catalyst Creative Studio transformed our brand identity completely. Their strategic approach to our rebranding campaign resulted in a 240% increase in brand awareness within just three months.&quot;
         </p>
       </div>
 
@@ -397,7 +515,7 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-gray-700 leading-relaxed">
-          "The team at Catalyst Creative Studio doesn't just create campaigns—they create movements. Our social media engagement skyrocketed by 380% and we finally connected with our target audience authentically."
+          &quot;The team at Catalyst Creative Studio doesn&apos;t just create campaigns—they create movements. Our social media engagement skyrocketed by 380% and we finally connected with our target audience authentically.&quot;
         </p>
       </div>
 
@@ -422,7 +540,7 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-gray-700 leading-relaxed">
-          "Working with Catalyst Creative Studio was a game-changer for our Q4 launch. Their creative vision and data-driven strategies helped us exceed our sales targets by 165%. Absolutely phenomenal work!"
+          &quot;Working with Catalyst Creative Studio was a game-changer for our Q4 launch. Their creative vision and data-driven strategies helped us exceed our sales targets by 165%. Absolutely phenomenal work!&quot;
         </p>
       </div>
 
@@ -447,7 +565,7 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-gray-700 leading-relaxed">
-          "Catalyst Creative Studio brought fresh perspective to our traditional financial services brand. Their innovative content strategy helped us reach millennials and Gen Z, expanding our customer base by 45%."
+          &quot;Catalyst Creative Studio brought fresh perspective to our traditional financial services brand. Their innovative content strategy helped us reach millennials and Gen Z, expanding our customer base by 45%.&quot;
         </p>
       </div>
 
@@ -472,7 +590,7 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-gray-700 leading-relaxed">
-          "The ROI we've seen from our partnership with Catalyst Creative Studio is incredible. Their email marketing campaigns alone generated a 320% increase in conversions. They truly understand our audience."
+          &quot;The ROI we&apos;ve seen from our partnership with Catalyst Creative Studio is incredible. Their email marketing campaigns alone generated a 320% increase in conversions. They truly understand our audience.&quot;
         </p>
       </div>
 
@@ -497,7 +615,7 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-gray-700 leading-relaxed">
-          "As a startup, we needed to make every marketing dollar count. Catalyst Creative Studio delivered exceptional results on a lean budget. Their strategic guidance helped us secure Series A funding!"
+          &quot;As a startup, we needed to make every marketing dollar count. Catalyst Creative Studio delivered exceptional results on a lean budget. Their strategic guidance helped us secure Series A funding!&quot;
         </p>
       </div>
     </div>
@@ -526,17 +644,17 @@ export default function HomePage() {
           id="billing-toggle"
           className="sr-only peer"
           onChange={(e) => {
-            const monthly = document.getElementById('monthly-price');
-            const annual = document.getElementById('annual-price');
-            const badge = document.getElementById('save-badge');
+            const monthly = document.getElementById('monthly-price')
+            const annual = document.getElementById('annual-price')
+            const badge = document.getElementById('save-badge')
             if (e.target.checked) {
-              monthly.classList.add('hidden');
-              annual.classList.remove('hidden');
-              badge.classList.remove('hidden');
+              monthly.classList.add('hidden')
+              annual.classList.remove('hidden')
+              badge.classList.remove('hidden')
             } else {
-              monthly.classList.remove('hidden');
-              annual.classList.add('hidden');
-              badge.classList.add('hidden');
+              monthly.classList.remove('hidden')
+              annual.classList.add('hidden')
+              badge.classList.add('hidden')
             }
           }}
         />
@@ -683,7 +801,7 @@ export default function HomePage() {
   <div className="max-w-4xl mx-auto relative z-10">
     {/* Header */}
     <div className="text-center mb-12">
-      <h2 className="text-5xl font-bold text-white mb-4">Let's Create Something Amazing</h2>
+      <h2 className="text-5xl font-bold text-white mb-4">Let&apos;s Create Something Amazing</h2>
       <p className="text-xl text-purple-200">Tell us about your project in 3 simple steps</p>
     </div>
 
@@ -732,525 +850,3 @@ export default function HomePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step 1: Contact Information */}
-        <div className={`transition-all duration-500 ${currentStep === 1 ? 'block' : 'hidden'}`}>
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-white mb-2">👋 Nice to meet you!</h3>
-              <p className="text-purple-200">Let's start with the basics</p>
-            </div>
-            
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                placeholder="John Doe"
-                required
-              />
-              {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                placeholder="john@company.com"
-                required
-              />
-              {errors.email && <p className="mt-1 text-sm text-red-300">{errors.email}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                placeholder="+1 (555) 123-4567"
-                required
-              />
-              {errors.phone && <p className="mt-1 text-sm text-red-300">{errors.phone}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="company" className="block text-sm font-medium text-white mb-2">
-                Company Name
-              </label>
-              <input
-                type="text"
-                id="company"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                placeholder="Your Company"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Step 2: Project Details */}
-        <div className={`transition-all duration-500 ${currentStep === 2 ? 'block' : 'hidden'}`}>
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-white mb-2">🎯 Tell us about your vision</h3>
-              <p className="text-purple-200">What brings you to Catalyst Creative Studio?</p>
-            </div>
-
-            <div>
-              <label htmlFor="serviceType" className="block text-sm font-medium text-white mb-2">
-                Service Type *
-              </label>
-              <select
-                id="serviceType"
-                name="serviceType"
-                value={formData.serviceType}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                required
-              >
-                <option value="" className="bg-purple-900">Select a service</option>
-                <option value="brand-strategy" className="bg-purple-900">Brand Strategy</option>
-                <option value="digital-marketing" className="bg-purple-900">Digital Marketing</option>
-                <option value="content-creation" className="bg-purple-900">Content Creation</option>
-                <option value="social-media" className="bg-purple-900">Social Media Management</option>
-                <option value="seo-sem" className="bg-purple-900">SEO & SEM</option>
-                <option value="web-design" className="bg-purple-900">Web Design</option>
-                <option value="video-production" className="bg-purple-900">Video Production</option>
-                <option value="other" className="bg-purple-900">Other</option>
-              </select>
-              {errors.serviceType && <p className="mt-1 text-sm text-red-300">{errors.serviceType}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="budget" className="block text-sm font-medium text-white mb-2">
-                Project Budget *
-              </label>
-              <select
-                id="budget"
-                name="budget"
-                value={formData.budget}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                required
-              >
-                <option value="" className="bg-purple-900">Select your budget range</option>
-                <option value="5k-10k" className="bg-purple-900">$5,000 - $10,000</option>
-                <option value="10k-25k" className="bg-purple-900">$10,000 - $25,000</option>
-                <option value="25k-50k" className="bg-purple-900">$25,000 - $50,000</option>
-                <option value="50k-100k" className="bg-purple-900">$50,000 - $100,000</option>
-                <option value="100k+" className="bg-purple-900">$100,000+</option>
-              </select>
-              {errors.budget && <p className="mt-1 text-sm text-red-300">{errors.budget}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="timeline" className="block text-sm font-medium text-white mb-2">
-                Desired Timeline *
-              </label>
-              <select
-                id="timeline"
-                name="timeline"
-                value={formData.timeline}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                required
-              >
-                <option value="" className="bg-purple-900">When do you need this?</option>
-                <option value="asap" className="bg-purple-900">ASAP (Within 1 month)</option>
-                <option value="1-3-months" className="bg-purple-900">1-3 months</option>
-                <option value="3-6-months" className="bg-purple-900">3-6 months</option>
-                <option value="6-12-months" className="bg-purple-900">6-12 months</option>
-                <option value="flexible" className="bg-purple-900">Flexible</option>
-              </select>
-              {errors.timeline && <p className="mt-1 text-sm text-red-300">{errors.timeline}</p>}
-            </div>
-          </div>
-        </div>
-
-        {/* Step 3: Project Description */}
-        <div className={`transition-all duration-500 ${currentStep === 3 ? 'block' : 'hidden'}`}>
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-white mb-2">🚀 Let's make it happen!</h3>
-              <p className="text-purple-200">Share your project details with us</p>
-            </div>
-
-            <div>
-              <label htmlFor="projectDescription" className="block text-sm font-medium text-white mb-2">
-                Project Description *
-              </label>
-              <textarea
-                id="projectDescription"
-                name="projectDescription"
-                value={formData.projectDescription}
-                onChange={handleInputChange}
-                rows="6"
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all resize-none"
-                placeholder="Tell us about your goals, target audience, and what success looks like for you..."
-                required
-              ></textarea>
-              {errors.projectDescription && <p className="mt-1 text-sm text-red-300">{errors.projectDescription}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="hearAboutUs" className="block text-sm font-medium text-white mb-2">
-                How did you hear about Catalyst Creative Studio?
-              </label>
-              <select
-                id="hearAboutUs"
-                name="hearAboutUs"
-                value={formData.hearAboutUs}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-              >
-                <option value="" className="bg-purple-900">Select an option</option>
-                <option value="google" className="bg-purple-900">Google Search</option>
-                <option value="social-media" className="bg-purple-900">Social Media</option>
-                <option value="referral" className="bg-purple-900">Referral</option>
-                <option value="advertisement" className="bg-purple-900">Advertisement</option>
-                <option value="event" className="bg-purple-900">Event/Conference</option>
-                <option value="other" className="bg-purple-900">Other</option>
-              </select>
-            </div>
-
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="newsletter"
-                name="newsletter"
-                checked={formData.newsletter}
-                onChange={handleInputChange}
-                className="mt-1 w-4 h-4 text-yellow-400 bg-white/10 border-white/30 rounded focus:ring-yellow-400 focus:ring-2"
-              />
-              <label htmlFor="newsletter" className="ml-3 text-sm text-white">
-                Yes, I'd like to receive marketing insights and updates from Catalyst Creative Studio
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Success Message */}
-        {submitStatus === 'success' && (
-          <div className="bg-green-500/20 border border-green-400 rounded-xl p-6 text-center">
-            <div className="text-5xl mb-3">🎉</div>
-            <h4 className="text-2xl font-bold text-white mb-2">Thank You!</h4>
-            <p className="text-green-100">
-              Your message has been received! Our team at Catalyst Creative Studio will reach out within 24 hours to discuss your project.
-            </p>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {submitStatus === 'error' && (
-          <div className="bg-red-500/20 border border-red-400 rounded-xl p-6 text-center">
-            <div className="text-4xl mb-3">⚠️</div>
-            <h4 className="text-xl font-bold text-white mb-2">Oops! Something went wrong</h4>
-            <p className="text-red-100 mb-4">{errorMessage}</p>
-            <button
-              type="button"
-              onClick={() => setSubmitStatus('idle')}
-              className="text-yellow-400 hover:text-yellow-300 underline"
-            >
-              Try again
-            </button>
-          </div>
-        )}
-
-        {/* Navigation Buttons */}
-        {submitStatus === 'idle' && (
-          <div className="flex justify-between items-center pt-6">
-            {currentStep > 1 ? (
-              <button
-                type="button"
-                onClick={handlePrevious}
-                className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all duration-300 border border-white/30"
-              >
-                ← Previous
-              </button>
-            ) : (
-              <div></div>
-            )}
-
-            {currentStep < 3 ? (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                Next Step →
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Sending...
-                  </span>
-                ) : (
-                  '🚀 Launch Your Project'
-                )}
-              </button>
-            )}
-          </div>
-        )}
-      </form>
-    </div>
-
-    {/* Trust Indicators */}
-    <div className="mt-12 text-center">
-      <p className="text-purple-200 text-sm mb-4">Trusted by 500+ brands worldwide</p>
-      <div className="flex justify-center items-center space-x-8 text-white/40">
-        <span className="text-xs">🔒 Secure & Confidential</span>
-        <span className="text-xs">⚡ 24hr Response Time</span>
-        <span className="text-xs">✨ Free Consultation</span>
-      </div>
-    </div>
-  </div>
-
-  <style jsx>{`
-    @keyframes blob {
-      0% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.9); }
-      100% { transform: translate(0px, 0px) scale(1); }
-    }
-    .animate-blob {
-      animation: blob 7s infinite;
-    }
-    .animation-delay-2000 {
-      animation-delay: 2s;
-    }
-    .animation-delay-4000 {
-      animation-delay: 4s;
-    }
-  `}</style>
-</section>
-
-<script dangerouslySetInnerHTML={{__html: `
-  (function() {
-    const [currentStep, setCurrentStep] = React.useState(1);
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [submitStatus, setSubmitStatus] = React.useState('idle');
-    const [errorMessage, setErrorMessage] = React.useState('');
-    const [formData, setFormData] = React.useState({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      serviceType: '',
-      budget: '',
-      timeline: '',
-      projectDescription: '',
-      hearAboutUs: '',
-      newsletter: false
-    });
-    const [errors, setErrors] = React.useState({});
-
-    const handleInputChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-      if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: '' }));
-      }
-    };
-
-    const validateStep = (step) => {
-      const newErrors = {};
-      
-      if (step === 1) {
-        if (!formData.name.trim()) newErrors.name = 'Name is required';
-        if (!formData.email.trim()) {
-          newErrors.email = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-          newErrors.email = 'Please enter a valid email';
-        }
-        if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
-      }
-      
-      if (step === 2) {
-        if (!formData.serviceType) newErrors.serviceType = 'Please select a service type';
-        if (!formData.budget) newErrors.budget = 'Please select a budget range';
-        if (!formData.timeline) newErrors.timeline = 'Please select a timeline';
-      }
-      
-      if (step === 3) {
-        if (!formData.projectDescription.trim()) {
-          newErrors.projectDescription = 'Project description is required';
-        } else if (formData.projectDescription.trim().length < 20) {
-          newErrors.projectDescription = 'Please provide more details (at least 20 characters)';
-        }
-      }
-      
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-
-    const handleNext = () => {
-      if (validateStep(currentStep)) {
-        setCurrentStep(prev => Math.min(prev + 1, 3));
-      }
-    };
-
-    const handlePrevious = () => {
-      setCurrentStep(prev => Math.max(prev - 1, 1));
-    };
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      
-      if (!validateStep(3)) return;
-      
-      setIsSubmitting(true);
-      setSubmitStatus('idle');
-      
-      try {
-        const response = await fetch('https://deep-api-server-2moiw.kinsta.app/api/form-submissions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...formData,
-            company: formData.company || 'Catalyst Creative Studio',
-            formType: 'Multi-Step Contact Form',
-            submittedAt: new Date().toISOString()
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to submit form');
-        }
-
-        setSubmitStatus('success');
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          company: '',
-          serviceType: '',
-          budget: '',
-          timeline: '',
-          projectDescription: '',
-          hearAboutUs: '',
-          newsletter: false
-        });
-        setCurrentStep(1);
-      } catch (error) {
-        console.error('Form submission error:', error);
-        setSubmitStatus('error');
-        setErrorMessage('Unable to submit your form. Please try again or contact us directly at hello@catalystcreative.studio');
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-    window.contactFormHandlers = {
-      currentStep,
-      setCurrentStep,
-      isSubmitting,
-      submitStatus,
-      setSubmitStatus,
-      errorMessage,
-      formData,
-      errors,
-      handleInputChange,
-      handleNext,
-      handlePrevious,
-      handleSubmit
-    };
-  })();
-`}} />
-      
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-purple-900 via-indigo-900 to-blue-900 text-white py-6">
-  <div className="container mx-auto px-4">
-    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-      {/* Brand */}
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-yellow-500 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">C</span>
-        </div>
-        <span className="font-bold text-xl">Catalyst Creative Studio</span>
-      </div>
-
-      {/* Contact Info */}
-      <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-        <a href="mailto:hello@catalystcreative.com" className="flex items-center gap-2 hover:text-pink-400 transition-colors">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-          </svg>
-          hello@catalystcreative.com
-        </a>
-        <a href="tel:+15551234567" className="flex items-center gap-2 hover:text-pink-400 transition-colors">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-          </svg>
-          (555) 123-4567
-        </a>
-      </div>
-
-      {/* Social Links */}
-      <div className="flex items-center gap-4">
-        <a href="https://facebook.com" className="hover:text-pink-400 transition-colors" aria-label="Facebook">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-          </svg>
-        </a>
-        <a href="https://instagram.com" className="hover:text-pink-400 transition-colors" aria-label="Instagram">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-          </svg>
-        </a>
-        <a href="https://linkedin.com" className="hover:text-pink-400 transition-colors" aria-label="LinkedIn">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-          </svg>
-        </a>
-        <a href="https://twitter.com" className="hover:text-pink-400 transition-colors" aria-label="Twitter">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-          </svg>
-        </a>
-      </div>
-
-      {/* Copyright */}
-      <div className="text-sm text-gray-300">
-        © {new Date().getFullYear()} Catalyst Creative Studio. All rights reserved.
-      </div>
-    </div>
-  </div>
-</footer>
-    </main>
-  )
-}
